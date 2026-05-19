@@ -1,6 +1,6 @@
 #include "VisDataPrep_ALE_NS.hpp"
 #include "PostVectSolution.hpp"
-
+#include "APart_Node.hpp"
 
 VisDataPrep_ALE_NS::VisDataPrep_ALE_NS()
 {

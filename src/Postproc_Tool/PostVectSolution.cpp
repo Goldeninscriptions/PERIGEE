@@ -1,5 +1,11 @@
 #include "PostVectSolution.hpp"
 
+#include "APart_Node.hpp"
+#include "Sys_Tools.hpp"
+#include "Vis_Tools.hpp"
+
+#include <iostream>
+
 PostVectSolution::PostVectSolution( const std::string &solution_file_name,
     const std::vector<int> &analysis_node_mapping,
     const std::vector<int> &post_node_mapping,

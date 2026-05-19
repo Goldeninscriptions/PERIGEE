@@ -1,6 +1,6 @@
 #include "VisDataPrep_FSI.hpp"
 #include "PostVectSolution.hpp"
-
+#include "APart_Node.hpp"
 
 VisDataPrep_FSI::VisDataPrep_FSI()
 {

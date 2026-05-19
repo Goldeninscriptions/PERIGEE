@@ -1,5 +1,6 @@
 #include "VisDataPrep_Transport.hpp"
 #include "PostVectSolution.hpp"
+#include "APart_Node.hpp"
 
 VisDataPrep_Transport::VisDataPrep_Transport()
 {

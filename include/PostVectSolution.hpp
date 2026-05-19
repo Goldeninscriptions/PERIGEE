@@ -20,9 +20,10 @@
 // Author: Ju Liu
 // Date: Dec 10 2013
 // ============================================================================
-#include "APart_Node.hpp"
-#include "HDF5_Tools.hpp"
-#include "Vis_Tools.hpp"
+#include <string>
+#include <vector>
+
+class APart_Node;
 
 class PostVectSolution
 {

@@ -1,5 +1,6 @@
 #include "VisDataPrep_Solid.hpp"
 #include "PostVectSolution.hpp"
+#include "APart_Node.hpp"
 
 VisDataPrep_Solid::VisDataPrep_Solid()
 {

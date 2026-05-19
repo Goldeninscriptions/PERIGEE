@@ -15,6 +15,7 @@
 #include "QuadPtsFactory.hpp"
 #include "PostVectSolution.hpp"
 #include "Post_error_transport.hpp"
+#include "HDF5_Tools.hpp"
 
 int main( int argc, char * argv[] )
 {
