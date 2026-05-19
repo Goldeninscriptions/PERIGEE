@@ -24,7 +24,6 @@ int main( int argc, char * argv[] )
   SYS_T::print_fatal_if(sysret != 0, "ERROR: system call failed. \n");
 
   // Read preprocessor command-line arguements recorded in the .h5 file
-
   auto cmd_h5r = SYS_T::make_unique<HDF5_Reader>( "preprocessor_cmd.h5" );
 
   std::string geo_file = cmd_h5r -> read_string("/", "geo_file");
@@ -70,7 +69,6 @@ int main( int argc, char * argv[] )
   
   auto IEN = SYS_T::make_unique<IEN_FEM>(nElem, std::move(vecIEN));
   
-
   const int nLocBas = FE_T::to_nLocBas(elemType);
   
   SYS_T::print_fatal_if( IEN->get_nLocBas() != nLocBas, "Error: the nLocBas from the Mesh %d and the IEN %d classes do not match. \n", nLocBas, IEN->get_nLocBas());

@@ -5,6 +5,7 @@
 // Date: Dec. 26 2021
 // ============================================================================
 #include "HDF5_Tools.hpp"
+#include "HDF5_Writer.hpp"
 #include "ANL_Tools.hpp"
 #include "APart_Node_FSI.hpp"
 #include "FlowRateFactory.hpp"

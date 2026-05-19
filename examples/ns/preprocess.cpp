@@ -59,11 +59,11 @@ int main( int argc, char * argv[] )
   const FEType elemType               = FE_T::to_FEType(elemType_str);
 
   // Optional:
-  const int wall_model_type               = paras["wall_model_type"].as<int>();
   // wall_model_type: 0 no weakly enforced Dirichlet bc;
   //                  1 weakly enforced Dirichlet bc in all direction;
   //                  2 strongly enforced in wall-normal direction,
   //                   and weakly enforced in wall-tangent direction
+  const int wall_model_type           = paras["wall_model_type"].as<int>();
 
   if(elemType!=FEType::Tet4 && elemType!=FEType::Tet10 && elemType!=FEType::Hex8 && elemType!=FEType::Hex27)
     SYS_T::print_fatal("ERROR: unknown element type %s.\n", elemType_str.c_str());
@@ -267,7 +267,7 @@ int main( int argc, char * argv[] )
     // Partition Nodal Inflow BC and write to h5 file
     auto infpart = SYS_T::make_unique<NBC_Partition_inflow>(part.get(), mnindex.get(), InFBC.get());
     
-    infpart->write_hdf5( part_file );
+    infpart -> write_hdf5( part_file );
     
     // Partition Elemental BC and write to h5 file
     auto ebcpart = SYS_T::make_unique<EBC_Partition_outflow>(part.get(), mnindex.get(), ebc.get(), NBC_list);
