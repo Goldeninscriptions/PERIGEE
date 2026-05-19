@@ -9,7 +9,6 @@
 //
 // Date Created: Jan 19 2017
 // ============================================================================
-#include "FEAElement.hpp"
 #include "FEAElement_Triangle3_3D_der0.hpp"
 
 class FEAElement_Tet4 final : public FEAElement
