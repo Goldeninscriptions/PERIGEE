@@ -19,7 +19,6 @@
 // Author: Ju Liu
 // Date: Nov. 23th 2013
 // ============================================================================
-#include "Sys_Tools.hpp"
 #include "APart_Node.hpp"
 
 class PDNSolution

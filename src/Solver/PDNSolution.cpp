@@ -1,4 +1,5 @@
 #include "PDNSolution.hpp"
+#include "Sys_Tools.hpp"
 #include <random>
 
 PDNSolution::PDNSolution( const APart_Node * const &pNode )
