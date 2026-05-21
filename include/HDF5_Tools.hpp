@@ -16,7 +16,7 @@ namespace HDF5_T
   inline int read_intScalar( const std::string &filename,
       const std::string &groupname, const std::string &dataname )
   {
-    std::unique_ptr<HDF5_Reader> h5r = SYS_T::make_unique<HDF5_Reader>( filename );
+    auto h5r = SYS_T::make_unique<HDF5_Reader>( filename );
 
     const int output = h5r -> read_intScalar( groupname.c_str(), dataname.c_str() );
 
@@ -26,10 +26,10 @@ namespace HDF5_T
   inline double read_doubleScalar( const std::string &filename,
       const std::string &groupname, const std::string &dataname )
   {
-    std::unique_ptr<HDF5_Reader> h5r = SYS_T::make_unique<HDF5_Reader>( filename );
+    auto h5r = SYS_T::make_unique<HDF5_Reader>( filename );
 
-    const double output = h5r -> read_doubleScalar( groupname.c_str(), dataname.c_str() );
-
+    const double output = h5r -> read_doubleScalar( groupname.c_str(), 
+        dataname.c_str() );
 
     return output;
   }
@@ -37,9 +37,10 @@ namespace HDF5_T
   inline std::vector<int> read_intVector( const std::string &filename,
       const std::string &groupname, const std::string &dataname )
   {
-    std::unique_ptr<HDF5_Reader> h5r = SYS_T::make_unique<HDF5_Reader>( filename );
+    auto h5r = SYS_T::make_unique<HDF5_Reader>( filename );
 
-    std::vector<int> output = h5r -> read_intVector( groupname.c_str(), dataname.c_str() );
+    std::vector<int> output = h5r -> read_intVector( groupname.c_str(), 
+        dataname.c_str() );
 
     output.shrink_to_fit();
 
