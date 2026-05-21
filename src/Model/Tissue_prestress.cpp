@@ -36,7 +36,6 @@ Tissue_prestress::Tissue_prestress(
       const std::string ps_fName = SYS_T::gen_partfile_name( ps_fileBaseName, cpu_rank );
       if( SYS_T::file_exist(ps_fName) )
       {
-
         auto ps_h5r = SYS_T::make_unique<HDF5_Reader>(ps_fName);
 
         const int ps_size = ps_h5r -> read_intScalar("/", "ps_array_size"); 
@@ -44,7 +43,6 @@ Tissue_prestress::Tissue_prestress(
         SYS_T::print_fatal_if(ps_size != counter_elem_s * nqp * 6, "Error: Tissue_prestress the HDF5 file for prestress is incompatible with the local solid element number.\n");
 
         qua_ps_array = ps_h5r -> read_doubleVector("/", "prestress");
-
       }
       else
         SYS_T::print_fatal("Error: prestress file %s cannot be found.\n", ps_fName.c_str());
