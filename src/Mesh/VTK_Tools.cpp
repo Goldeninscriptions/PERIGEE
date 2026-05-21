@@ -14,7 +14,7 @@
 #include "vtkXMLPolyDataWriter.h"
 #include "vtkXMLPolyDataReader.h"
 #include "vtkXMLGenericDataObjectReader.h"
-#include <vtkSmartPointer.h>
+#include "vtkSmartPointer.h"
 
 void VTK_T::read_vtu_grid( const std::string &filename,
     int &numpts, int &numcels,
