@@ -154,33 +154,7 @@ namespace SYS_T
   // ================================================================
   // The following are used in processor.
   // ================================================================
-  // 1. Synchronized print on screen. Here we use petsc functions:
-  //    PetscSynchronizedPrintf() and PetscSynchronizedFlush().
-  //    The output should be lised from proc 0, 1, ... to n in sequence.
-  inline void synPrint(const std::string &output, int cpu_rank)
-  {
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD, "Proc %d: ", cpu_rank);
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD, "%s", output.c_str());
-    PetscSynchronizedFlush(PETSC_COMM_WORLD, PETSC_STDOUT);
-  }
-  inline void synPrint(const char * const &output, int cpu_rank)
-  {
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD, "Proc %d: ", cpu_rank);
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD, "%s", output);
-    PetscSynchronizedFlush(PETSC_COMM_WORLD, PETSC_STDOUT);
-  }
-  inline void synPrint(const std::string &output)
-  {
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD, "%s", output.c_str());
-    PetscSynchronizedFlush(PETSC_COMM_WORLD, PETSC_STDOUT);
-  }
-  inline void synPrint(const char * const &output)
-  {
-    PetscSynchronizedPrintf(PETSC_COMM_WORLD, "%s", output);
-    PetscSynchronizedFlush(PETSC_COMM_WORLD, PETSC_STDOUT);
-  }
-
-  // 2. print from processor 0, other preprocessors are ignored.
+  // 1. print from processor 0, other preprocessors are ignored.
   inline void commPrint(const char output[], ...)
   {
     int mpi_flag {-1};
@@ -216,7 +190,7 @@ namespace SYS_T
     }
   }
 
-  // 3. Print the data name and its value on screen using PetscPrintf
+  // 2. Print the data name and its value on screen using PetscPrintf
   //    and PETSC_COMM_WORLD. This is particularly designed to print
   //    command line arguments.
   inline void cmdPrint(const char * const &dataname, int datavalue)
@@ -226,7 +200,7 @@ namespace SYS_T
   inline void cmdPrint(const char * const &dataname, const std::string &datavalue)
   {std::ostringstream ss; ss<<dataname<<" "<<datavalue<<"\n"; PetscPrintf(PETSC_COMM_WORLD, "%s", ss.str().c_str());}
 
-  // 4. Print fatal error message and terminate the MPI process
+  // 3. Print fatal error message and terminate the MPI process
   inline void print_fatal( const char output[], ... )
   { 
     int mpi_flag {-1};
@@ -353,7 +327,7 @@ namespace SYS_T
     }
   }
 
-  // 5. print the number of threads used in openmp
+  // 4. print the number of threads used in openmp
   inline void print_omp_info()
   {
 #ifdef _OPENMP
