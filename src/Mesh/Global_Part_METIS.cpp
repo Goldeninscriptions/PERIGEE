@@ -53,8 +53,6 @@ Global_Part_METIS::Global_Part_METIS( const int &cpu_size,
   std::cout<<"---- eind allocated with length "<<eind_size<<" and size: ";
   SYS_T::print_mem_size(double(eind_size) * sizeof(idx_t));
   std::cout<<"\n";
-
-  clock_t time_tracker = clock();
   
   for( idx_t ee=0; ee<nElem; ++ee )
   {
@@ -64,10 +62,7 @@ Global_Part_METIS::Global_Part_METIS( const int &cpu_size,
   }
   eptr[nElem] = nElem * nLocBas;
   
-  time_tracker = clock() - time_tracker;
-
-  std::cout<<"---- eptr eind generated, taking ";
-  std::cout<<((double) time_tracker)/CLOCKS_PER_SEC<<" seconds. \n";
+  std::cout<<"---- eptr eind generated.\n";
 
   epart = new idx_t [nElem];
   npart = new idx_t [nFunc];
@@ -81,7 +76,6 @@ Global_Part_METIS::Global_Part_METIS( const int &cpu_size,
   int metis_result;
   idx_t objval;
   
-  time_tracker = clock();
   if( isDualGraph )
   {
     std::cout<<"---- calling METIS_PartMeshDual ... \n";
@@ -118,22 +112,13 @@ Global_Part_METIS::Global_Part_METIS( const int &cpu_size,
   delete [] eptr; eptr = nullptr;
   delete [] eind; eind = nullptr;
   
-  time_tracker = clock() - time_tracker;
-
-  std::cout<<"-- METIS partition successfully completed, taking ";
-  std::cout<<((double) time_tracker)/CLOCKS_PER_SEC<<" seconds. \n";
+  std::cout<<"-- METIS partition successfully completed.\n";
  
-  time_tracker = clock();
-  std::cout<<"-- writing epart file takes "; 
+  std::cout<<"-- writing epart file.\n"; 
   write_part_hdf5(element_part_name, epart, nElem, cpu_size );
-  time_tracker = clock() - time_tracker;
-  std::cout<<((double) time_tracker)/CLOCKS_PER_SEC<<" seconds. \n";
   
-  time_tracker = clock();
-  std::cout<<"-- writing npart file takes "; 
+  std::cout<<"-- writing npart file.\n"; 
   write_part_hdf5(node_part_name, npart, nFunc, cpu_size );
-  time_tracker = clock() - time_tracker;
-  std::cout<<((double) time_tracker)/CLOCKS_PER_SEC<<" seconds. \n";
 
   std::cout<<"=== Global partition generated. \n";
 }
@@ -233,8 +218,6 @@ Global_Part_METIS::Global_Part_METIS( const int &num_fields,
   SYS_T::print_mem_size(double(eind_size) * sizeof(idx_t));
   std::cout<<"\n";
 
-  clock_t time_tracker = clock();
-
   for( idx_t ee=0; ee<nElem; ++ee )
   {
     eptr[ee] = ee * nLocBas;
@@ -254,10 +237,7 @@ Global_Part_METIS::Global_Part_METIS( const int &num_fields,
 
   eptr[nElem] = nElem * nLocBas;
 
-  time_tracker = clock() - time_tracker;
-
-  std::cout<<"---- eptr eind generated, taking ";
-  std::cout<<((double) time_tracker)/CLOCKS_PER_SEC<<" seconds. \n";
+  std::cout<<"---- eptr eind generated.\n";
 
   epart = new idx_t [nElem];
   npart = new idx_t [nFunc];
@@ -270,7 +250,6 @@ Global_Part_METIS::Global_Part_METIS( const int &num_fields,
   int metis_result;
   idx_t objval;
 
-  time_tracker = clock();
   if( isDualGraph )
   {
     std::cout<<"---- calling METIS_PartMeshDual ... \n";
@@ -307,24 +286,15 @@ Global_Part_METIS::Global_Part_METIS( const int &num_fields,
   delete [] eptr; eptr = nullptr;
   delete [] eind; eind = nullptr;
 
-  time_tracker = clock() - time_tracker;
+  std::cout<<"-- METIS partition successfully completed.\n";
 
-  std::cout<<"-- METIS partition successfully completed, taking ";
-  std::cout<<((double) time_tracker)/CLOCKS_PER_SEC<<" seconds. \n";
-
-  time_tracker = clock();
-  std::cout<<"-- writing epart file takes ";
+  std::cout<<"-- writing epart file.\n";
   write_part_hdf5(element_part_name, epart, nElem, cpu_size );
-  time_tracker = clock() - time_tracker;
-  std::cout<<((double) time_tracker)/CLOCKS_PER_SEC<<" seconds. \n";
 
-  time_tracker = clock();
-  std::cout<<"-- writing npart file takes ";
+  std::cout<<"-- writing npart file.\n";
   write_part_hdf5(node_part_name, npart, nFunc, cpu_size );
-  time_tracker = clock() - time_tracker;
-  std::cout<<((double) time_tracker)/CLOCKS_PER_SEC<<" seconds. \n";
 
-  std::cout<<"=== Global partition generated. \n";
+  std::cout<<"=== Global partition generated.\n";
 }
 
 Global_Part_METIS::~Global_Part_METIS()
