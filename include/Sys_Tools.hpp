@@ -96,18 +96,7 @@ namespace SYS_T
       int rank )
   {
     std::ostringstream ss;
-    ss << baseName <<"_p";
-
-    if( rank / 10 == 0 )
-      ss<<"0000";
-    else if( rank / 100 == 0 )
-      ss<<"000";
-    else if( rank / 1000 == 0 )
-      ss<<"00";
-    else if( rank / 10000 == 0 )
-      ss<<"0";
-
-    ss<<rank<<".h5";
+    ss << baseName << "_p" << std::setfill('0') << std::setw(5) << rank << ".h5";
     return ss.str();
   }
 
@@ -364,7 +353,7 @@ namespace SYS_T
     std::tm     *time = std::localtime(&time1);
 
     std::ostringstream o;
-    o << time->tm_hour << ":"
+    o << (time->tm_hour < 10 ? "0" : "") << time->tm_hour << ":"
       << (time->tm_min < 10 ? "0" : "") << time->tm_min << ":"
       << (time->tm_sec < 10 ? "0" : "") << time->tm_sec;
 
@@ -372,7 +361,7 @@ namespace SYS_T
   }
 
   // ----------------------------------------------------------------
-  // 2. get_date: return the present date as YYYY/MM/DD
+  // 2. get_date: return the present date as YYYY-MM-DD
   // ----------------------------------------------------------------
   inline std::string get_date()
   {
@@ -380,9 +369,9 @@ namespace SYS_T
     std::tm     *time = std::localtime(&time1);
 
     std::ostringstream o;
-    o << time->tm_year + 1900 << "/"
-      << time->tm_mon + 1 << "/"
-      << time->tm_mday;
+    o << time->tm_year + 1900 << "-"
+      << (time->tm_mon < 9 ? "0" : "") << time->tm_mon + 1 << "-"
+      << (time->tm_mday < 10 ? "0" : "") << time->tm_mday;
 
     return o.str();
   }
