@@ -90,15 +90,24 @@ namespace SYS_T
   }
 
   // --------------------------------------------------------------------------
+  // ! fixed_length_index( index, length )
+  //   Format an index as a fixed minimum-length string with leading zeros.
+  // --------------------------------------------------------------------------
+  inline std::string fixed_length_index( const int index, const int length = 9 )
+  {
+    std::ostringstream ss;
+    ss << std::setfill('0') << std::setw(length) << index;
+    return ss.str();
+  }
+
+  // --------------------------------------------------------------------------
   // ! gen_partfile_name( baseName, rank )
   //   Generate a partition file's name (hdf5 file) in the form baseName_pxxxxx.h5.
   // --------------------------------------------------------------------------
   inline std::string gen_partfile_name( const std::string &baseName, 
       int rank )
   {
-    std::ostringstream ss;
-    ss << baseName << "_p" << std::setfill('0') << std::setw(5) << rank << ".h5";
-    return ss.str();
+    return baseName + "_p" + fixed_length_index(rank, 5) + ".h5";
   }
 
   // --------------------------------------------------------------------------
@@ -108,9 +117,7 @@ namespace SYS_T
   inline std::string gen_capfile_name( const std::string &baseName,
       int index, const std::string &filename )
   {
-    std::ostringstream ss;
-    ss << baseName << std::setfill('0') << std::setw(3) << index << filename;
-    return ss.str();
+    return baseName + fixed_length_index(index, 3) + filename;
   }
 
   // --------------------------------------------------------------------------
