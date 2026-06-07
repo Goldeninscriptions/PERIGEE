@@ -12,8 +12,6 @@
 // ============================================================================
 #include "Sys_Tools.hpp"
 
-#include <string>
-
 class IFlowRate
 {
   public:

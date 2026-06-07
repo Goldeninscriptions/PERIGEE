@@ -23,10 +23,8 @@ class Global_Part_METIS : public IGlobal_Part
     // It will create eptr and eind arrays and call METIS_PartMeshDual or
     // METIS_PartMeshNodal for mesh partition
     // ------------------------------------------------------------------------
-    Global_Part_METIS( int cpu_size,
-        int in_ncommon, bool isDualGraph,
-        int in_nelem, int in_nfunc, int in_nlocbas,
-        const IIEN * IEN,
+    Global_Part_METIS( int cpu_size, int in_ncommon, bool isDualGraph,
+        int in_nelem, int in_nfunc, int in_nlocbas, const IIEN * IEN,
         const std::string &element_part_name = "epart",
         const std::string &node_part_name = "npart" );
 
@@ -87,16 +85,14 @@ class Global_Part_METIS : public IGlobal_Part
     std::vector<int> field_offset;
 
     virtual void write_part_hdf5( const std::string &fileName, 
-        const idx_t * part_in,
-        int part_size, int cpu_size ) const;
+        const idx_t * part_in, int part_size, int cpu_size ) const;
 
     // ------------------------------------------------------------------------
     // This function will write the data of part_in in 64bit HDF5 format. 
     // This function should be called if idx_t is the int64_t.
     // ------------------------------------------------------------------------
     virtual void write_part_hdf5_64bit( const std::string &fileName, 
-        const int64_t * part_in,
-        const int64_t &part_size, int cpu_size ) const;
+        const int64_t * part_in, int64_t part_size, int cpu_size ) const;
 };
 
 #endif
