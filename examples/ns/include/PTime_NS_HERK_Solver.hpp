@@ -26,7 +26,6 @@ class PTime_NS_HERK_Solver
         std::unique_ptr<Matrix_PETSc> in_bc_mat,
         std::unique_ptr<ITimeMethod_RungeKutta> in_tmRK,
         std::unique_ptr<IFlowRate> in_flrate,
-        std::unique_ptr<IFlowRate> in_dot_flrate,
         std::unique_ptr<PDNSolution> in_sol_base,
         std::unique_ptr<ALocal_InflowBC> in_infnbc,
         const std::string &input_name, const int &in_nlocalnode, 
@@ -46,6 +45,13 @@ class PTime_NS_HERK_Solver
         std::unique_ptr<PDNSolution> init_pres,
         std::unique_ptr<PDNTimeStep> time_info ) const;
 
+    void PRES_NS_HERK(
+        const PDNSolution * const &init_sol,
+        const PDNSolution * const &init_dot_velo,
+        const PDNSolution * const &init_pres,
+        const PDNSolution * const &init_dot_sol,
+        const int &time_index, const double &dt ) const;
+
   private:
     const double final_time;
     const int sol_record_freq; // the frequency for writing solutions
@@ -57,7 +63,6 @@ class PTime_NS_HERK_Solver
     const std::unique_ptr<Matrix_PETSc> bc_mat;
     const std::unique_ptr<ITimeMethod_RungeKutta> tmRK;
     const std::unique_ptr<IFlowRate> flrate;
-    const std::unique_ptr<IFlowRate> dot_flrate;
     const std::unique_ptr<PDNSolution> sol_base;
     const std::unique_ptr<const ALocal_InflowBC> infnbc;
 
@@ -89,6 +94,10 @@ class PTime_NS_HERK_Solver
           const IFlowRate * const &flrate, 
           PDNSolution * const &velo ) const;
 
+      void rescale_dot_inflow_velo( const double &stime,
+          const IFlowRate * const &flrate, 
+          PDNSolution * const &dot_velo ) const;
+
       void Update_dot_step(const Vec &vp, 
           PDNSolution * const &step) const;
 
@@ -100,6 +109,10 @@ class PTime_NS_HERK_Solver
       void Update_init_pressure_velocity(     
           PDNSolution * const &velo,
           PDNSolution * const &pres,
+          const PDNSolution * const &sol) const;  
+
+      void Update_velocity_from_sol(     
+          PDNSolution * const &velo,
           const PDNSolution * const &sol) const;  
 
       void Update_solutions(   
