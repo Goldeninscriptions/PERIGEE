@@ -16,10 +16,12 @@
 #include "Part_FEM.hpp"
 #include "NodalBC.hpp"
 #include "NodalBC_3D_inflow.hpp"
+#include "NodalBC_3D_rotating_wall.hpp"
 #include "ElemBC_3D_outflow.hpp"
 #include "ElemBC_3D_WallModel.hpp"
 #include "NBC_Partition.hpp"
 #include "NBC_Partition_inflow.hpp"
+#include "NBC_Partition_rotated.hpp"
 #include "EBC_Partition_outflow.hpp"
 #include "EBC_Partition_WallModel.hpp"
 #include "yaml-cpp/yaml.h"
@@ -243,6 +245,9 @@ int main( int argc, char * argv[] )
   // reset IEN for outward normal calculations
   InFBC -> resetSurIEN_outwardnormal( IEN.get() );
 
+  auto RotBC = SYS_T::make_unique<NodalBC_3D_rotating_wall>(
+      sur_file_wall, nFunc, elemType );
+
   // Setup Elemental Boundary Conditions
   // Obtain the outward normal vector
   std::vector< Vector_3 > outlet_outvec( sur_file_out.size() );
@@ -301,6 +306,10 @@ int main( int argc, char * argv[] )
     auto infpart = SYS_T::make_unique<NBC_Partition_inflow>(part.get(), mnindex.get(), InFBC.get());
     
     infpart -> write_hdf5( part_file );
+
+    auto rotpart = SYS_T::make_unique<NBC_Partition_rotated>(part.get(), mnindex.get(), RotBC.get());
+
+    rotpart -> write_hdf5( part_file );
     
     // Partition Elemental BC and write to h5 file
     auto ebcpart = SYS_T::make_unique<EBC_Partition_outflow>(part.get(), mnindex.get(), ebc.get(), NBC_list);

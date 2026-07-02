@@ -1,5 +1,6 @@
 #include "PNonlinear_NS_Solver.hpp"
 #include "LoadData.hpp"
+#include <cmath>
 
 PNonlinear_NS_Solver::PNonlinear_NS_Solver(
     std::unique_ptr<PLinear_Solver_PETSc> in_lsolver,
@@ -7,12 +8,18 @@ PNonlinear_NS_Solver::PNonlinear_NS_Solver(
     std::unique_ptr<TimeMethod_GenAlpha> in_tmga,
     std::unique_ptr<IFlowRate> in_flrate,
     std::unique_ptr<PDNSolution> in_sol_base,
+    const double &input_freestream_speed,
+    const double &input_freestream_thd_time,
     const double &input_nrtol, const double &input_natol,
     const double &input_ndtol,
     const int &input_max_iteration, 
     const int &input_renew_freq,
+    const double &input_angular_velo,
+    const double &input_angular_thd_time,
     const int &input_renew_threshold )
-: nr_tol(input_nrtol), na_tol(input_natol), nd_tol(input_ndtol),
+: freestream_speed(input_freestream_speed), nr_tol(input_nrtol), na_tol(input_natol), nd_tol(input_ndtol),
+  freestream_thd_time(input_freestream_thd_time), angular_velo(input_angular_velo),
+  angular_thd_time(input_angular_thd_time),
   nmaxits(input_max_iteration), nrenew_freq(input_renew_freq),
   nrenew_threshold(input_renew_threshold),
   lsolver(std::move(in_lsolver)),
@@ -52,6 +59,7 @@ int PNonlinear_NS_Solver::GenAlpha_Solve_NS(
     PDNSolution * const &dot_sol,
     PDNSolution * const &sol,
     const ALocal_InflowBC * const &infnbc_part,
+    const ALocal_RotatedBC * const &rotbc_part,
     const IGenBC * const &gbc,
     IPGAssem * const &gassem_ptr ) const
 {
@@ -81,14 +89,22 @@ int PNonlinear_NS_Solver::GenAlpha_Solve_NS(
 
   // ------------------------------------------------- 
   // Update the inflow boundary values
-  LoadData::rescale_inflow_value(curr_time+dt, infnbc_part, flrate.get(), sol_base.get(), sol);
-  LoadData::rescale_inflow_value(curr_time+alpha_f*dt, infnbc_part, flrate.get(), sol_base.get(), &sol_alpha);
+  update_uniform_inflow_value(curr_time + dt, infnbc_part, sol);
+  update_uniform_inflow_value(curr_time + alpha_f * dt, infnbc_part, &sol_alpha);
   // ------------------------------------------------- 
 
   // ------------------------------------------------- 
+  // Update rotating wall velocity values
+  update_rotating_wall_value(curr_time + dt, rotbc_part, sol);
+  update_rotating_wall_value(curr_time + alpha_f * dt, rotbc_part, &sol_alpha);
+  // -------------------------------------------------
+
+  // ------------------------------------------------- 
   // Update the dot_inflow boundary values
-  LoadData::rescale_dot_inflow_value(curr_time+dt, infnbc_part, flrate.get(), sol_base.get(), dot_sol);
-  LoadData::rescale_dot_inflow_value(curr_time+alpha_m*dt, infnbc_part, flrate.get(), sol_base.get(), &dot_sol_alpha);
+  update_uniform_inflow_dot_value(curr_time + dt, infnbc_part, dot_sol);
+  update_uniform_inflow_dot_value(curr_time + alpha_m * dt, infnbc_part, &dot_sol_alpha);
+  update_rotating_wall_dot_value(curr_time + dt, rotbc_part, dot_sol);
+  update_rotating_wall_dot_value(curr_time + alpha_m * dt, rotbc_part, &dot_sol_alpha);
   // ------------------------------------------------- 
 
   // If new_tangent_flag == TRUE, update the tangent matrix;
@@ -201,6 +217,162 @@ int PNonlinear_NS_Solver::GenAlpha_Solve_NS(
   Print_convergence_info(nl_counter, relative_error, residual_norm);
 
   return nl_counter;
+}
+
+double PNonlinear_NS_Solver::get_ramped_freestream_speed( const double &stime ) const
+{
+  if( freestream_thd_time <= 0.0 || stime >= freestream_thd_time ) return freestream_speed;
+  if( stime <= 0.0 ) return 0.0;
+
+  return 0.5 * freestream_speed
+    * ( 1.0 - std::cos( MATH_T::PI * stime / freestream_thd_time ) );
+}
+
+double PNonlinear_NS_Solver::get_ramped_freestream_accel( const double &stime ) const
+{
+  if( freestream_thd_time <= 0.0 || stime <= 0.0 || stime >= freestream_thd_time ) return 0.0;
+
+  return 0.5 * freestream_speed * MATH_T::PI / freestream_thd_time
+    * std::sin( MATH_T::PI * stime / freestream_thd_time );
+}
+
+double PNonlinear_NS_Solver::get_ramped_angular_velocity( const double &stime ) const
+{
+  if( angular_thd_time <= 0.0 || stime >= angular_thd_time ) return angular_velo;
+  if( stime <= 0.0 ) return 0.0;
+
+  return 0.5 * angular_velo
+    * ( 1.0 - std::cos( MATH_T::PI * stime / angular_thd_time ) );
+}
+
+double PNonlinear_NS_Solver::get_ramped_angular_accel( const double &stime ) const
+{
+  if( angular_thd_time <= 0.0 || stime <= 0.0 || stime >= angular_thd_time ) return 0.0;
+
+  return 0.5 * angular_velo * MATH_T::PI / angular_thd_time
+    * std::sin( MATH_T::PI * stime / angular_thd_time );
+}
+
+void PNonlinear_NS_Solver::update_rotating_wall_value(
+    const double &stime,
+    const ALocal_RotatedBC * const &rotbc,
+    PDNSolution * const &sol ) const
+{
+  constexpr double cylinder_radius = 0.5;
+  const double ramped_angular_velocity = get_ramped_angular_velocity(stime);
+  const int numnode = rotbc->get_Num_LD();
+
+  for( int ii=0; ii<numnode; ++ii )
+  {
+    const int node_index = rotbc->get_LDN(ii);
+    const Vector_3 pt = rotbc->get_LDN_pt_xyz(ii);
+    const double radial_distance = std::sqrt( pt.x() * pt.x() + pt.y() * pt.y() );
+
+    SYS_T::print_fatal_if( radial_distance <= 1.0e-12,
+        "Error: rotating wall node is too close to the z-axis.\n" );
+
+    const double wall_speed = ramped_angular_velocity * cylinder_radius;
+    const double vals[3] = {
+      -wall_speed * pt.y() / radial_distance,
+       wall_speed * pt.x() / radial_distance,
+       0.0
+    };
+    const int sol_idx[3] = { node_index * 4 + 1, node_index * 4 + 2, node_index * 4 + 3 };
+
+    VecSetValues(sol->solution, 3, sol_idx, vals, INSERT_VALUES);
+  }
+
+  sol->Assembly_GhostUpdate();
+}
+
+void PNonlinear_NS_Solver::update_rotating_wall_dot_value(
+    const double &stime,
+    const ALocal_RotatedBC * const &rotbc,
+    PDNSolution * const &dot_sol ) const
+{
+  constexpr double cylinder_radius = 0.5;
+  const double ramped_angular_accel = get_ramped_angular_accel(stime);
+  const int numnode = rotbc->get_Num_LD();
+
+  for( int ii=0; ii<numnode; ++ii )
+  {
+    const int node_index = rotbc->get_LDN(ii);
+    const Vector_3 pt = rotbc->get_LDN_pt_xyz(ii);
+    const double radial_distance = std::sqrt( pt.x() * pt.x() + pt.y() * pt.y() );
+
+    SYS_T::print_fatal_if( radial_distance <= 1.0e-12,
+        "Error: rotating wall node is too close to the z-axis.\n" );
+
+    const double wall_accel = ramped_angular_accel * cylinder_radius;
+    const double vals[3] = {
+      -wall_accel * pt.y() / radial_distance,
+       wall_accel * pt.x() / radial_distance,
+       0.0
+    };
+    const int sol_idx[3] = { node_index * 4 + 1, node_index * 4 + 2, node_index * 4 + 3 };
+
+    VecSetValues(dot_sol->solution, 3, sol_idx, vals, INSERT_VALUES);
+  }
+
+  dot_sol->Assembly_GhostUpdate();
+}
+
+void PNonlinear_NS_Solver::update_uniform_inflow_value(
+    const double &stime,
+    const ALocal_InflowBC * const &infbc,
+    PDNSolution * const &sol ) const
+{
+  const double ramped_freestream_speed = get_ramped_freestream_speed(stime);
+  const int num_nbc = infbc->get_num_nbc();
+
+  for(int nbc_id=0; nbc_id<num_nbc; ++nbc_id)
+  {
+    const Vector_3 outvec = infbc->get_outvec(nbc_id);
+    const double vals[3] = {
+      -ramped_freestream_speed * outvec.x(),
+      -ramped_freestream_speed * outvec.y(),
+      -ramped_freestream_speed * outvec.z()
+    };
+
+    const int numnode = infbc->get_Num_LD(nbc_id);
+    for(int ii=0; ii<numnode; ++ii)
+    {
+      const int node_index = infbc->get_LDN(nbc_id, ii);
+      const int sol_idx[3] = { node_index * 4 + 1, node_index * 4 + 2, node_index * 4 + 3 };
+      VecSetValues(sol->solution, 3, sol_idx, vals, INSERT_VALUES);
+    }
+  }
+
+  sol->Assembly_GhostUpdate();
+}
+
+void PNonlinear_NS_Solver::update_uniform_inflow_dot_value(
+    const double &stime,
+    const ALocal_InflowBC * const &infbc,
+    PDNSolution * const &dot_sol ) const
+{
+  const double ramped_freestream_accel = get_ramped_freestream_accel(stime);
+  const int num_nbc = infbc->get_num_nbc();
+
+  for(int nbc_id=0; nbc_id<num_nbc; ++nbc_id)
+  {
+    const Vector_3 outvec = infbc->get_outvec(nbc_id);
+    const double vals[3] = {
+      -ramped_freestream_accel * outvec.x(),
+      -ramped_freestream_accel * outvec.y(),
+      -ramped_freestream_accel * outvec.z()
+    };
+
+    const int numnode = infbc->get_Num_LD(nbc_id);
+    for(int ii=0; ii<numnode; ++ii)
+    {
+      const int node_index = infbc->get_LDN(nbc_id, ii);
+      const int sol_idx[3] = { node_index * 4 + 1, node_index * 4 + 2, node_index * 4 + 3 };
+      VecSetValues(dot_sol->solution, 3, sol_idx, vals, INSERT_VALUES);
+    }
+  }
+
+  dot_sol->Assembly_GhostUpdate();
 }
 
 // EOF

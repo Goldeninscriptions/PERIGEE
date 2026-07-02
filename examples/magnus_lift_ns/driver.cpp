@@ -10,12 +10,88 @@
 // ==================================================================
 #include "HDF5_Writer.hpp"
 #include "ANL_Tools.hpp"
+#include "ALocal_RotatedBC.hpp"
 #include "FlowRateFactory.hpp"
 #include "GenBCFactory.hpp"
 #include "InitHelpers.hpp"
 #include "PLocAssem_VMS_NS_GenAlpha_WeakBC.hpp"
 #include "PGAssem_NS_FEM.hpp"
 #include "PTime_NS_Solver.hpp"
+
+namespace
+{
+  double cosine_ramp_value( const double target, const double thd_time,
+      const double time )
+  {
+    if( thd_time <= 0.0 || time >= thd_time ) return target;
+    if( time <= 0.0 ) return 0.0;
+
+    return 0.5 * target * ( 1.0 - std::cos( MATH_T::PI * time / thd_time ) );
+  }
+
+  double cosine_ramp_rate( const double target, const double thd_time,
+      const double time )
+  {
+    if( thd_time <= 0.0 || time <= 0.0 || time >= thd_time ) return 0.0;
+
+    return 0.5 * target * MATH_T::PI / thd_time
+      * std::sin( MATH_T::PI * time / thd_time );
+  }
+
+  void apply_uniform_inflow_bc(
+      const ALocal_InflowBC * const infbc,
+      const double freestream_magnitude,
+      PDNSolution * const sol )
+  {
+    for( int nbc_id=0; nbc_id<infbc->get_num_nbc(); ++nbc_id )
+    {
+      const Vector_3 outvec = infbc->get_outvec(nbc_id);
+      const double vals[3] = {
+        -freestream_magnitude * outvec.x(),
+        -freestream_magnitude * outvec.y(),
+        -freestream_magnitude * outvec.z()
+      };
+
+      for( int ii=0; ii<infbc->get_Num_LD(nbc_id); ++ii )
+      {
+        const int node_index = infbc->get_LDN(nbc_id, ii);
+        const int sol_idx[3] = { node_index * 4 + 1, node_index * 4 + 2, node_index * 4 + 3 };
+        VecSetValues(sol->solution, 3, sol_idx, vals, INSERT_VALUES);
+      }
+    }
+
+    sol->Assembly_GhostUpdate();
+  }
+
+  void apply_rotating_wall_bc(
+      const ALocal_RotatedBC * const rotbc,
+      const double angular_speed,
+      PDNSolution * const sol )
+  {
+    constexpr double cylinder_radius = 0.5;
+
+    for( int ii=0; ii<rotbc->get_Num_LD(); ++ii )
+    {
+      const int node_index = rotbc->get_LDN(ii);
+      const Vector_3 pt = rotbc->get_LDN_pt_xyz(ii);
+      const double radial_distance = std::sqrt( pt.x() * pt.x() + pt.y() * pt.y() );
+
+      SYS_T::print_fatal_if( radial_distance <= 1.0e-12,
+          "Error: rotating wall node is too close to the z-axis.\n" );
+
+      const double wall_speed = angular_speed * cylinder_radius;
+      const double vals[3] = {
+        -wall_speed * pt.y() / radial_distance,
+         wall_speed * pt.x() / radial_distance,
+         0.0
+      };
+      const int sol_idx[3] = { node_index * 4 + 1, node_index * 4 + 2, node_index * 4 + 3 };
+      VecSetValues(sol->solution, 3, sol_idx, vals, INSERT_VALUES);
+    }
+
+    sol->Assembly_GhostUpdate();
+  }
+}
 
 int main(int argc, char *argv[])
 {
@@ -39,6 +115,12 @@ int main(int argc, char *argv[])
 
   // inflow file
   std::string inflow_file("inflow_fourier_series.txt");
+  double freestream_speed = 0.0;
+  double freestream_thd_time = 0.0;
+
+  // Cylinder angular velocity around the z-axis, rad/s
+  double angular_velo = 0.0;
+  double angular_thd_time = 0.0;
 
   // LPN file
   std::string lpn_file("lpn_rcr_input.txt");
@@ -112,6 +194,10 @@ int main(int argc, char *argv[])
   SYS_T::GetOptionReal("-c_tauc", c_tauc);
   SYS_T::GetOptionReal("-c_ct", c_ct);
   SYS_T::GetOptionString("-inflow_file", inflow_file);
+  SYS_T::GetOptionReal("-freestream_speed", freestream_speed);
+  SYS_T::GetOptionReal("-freestream_thd_time", freestream_thd_time);
+  SYS_T::GetOptionReal("-angular_velo", angular_velo);
+  SYS_T::GetOptionReal("-angular_thd_time", angular_thd_time);
   SYS_T::GetOptionString("-lpn_file", lpn_file);
   SYS_T::GetOptionString("-part_file", part_file);
   SYS_T::GetOptionReal("-nl_rtol", nl_rtol);
@@ -149,6 +235,10 @@ int main(int argc, char *argv[])
   SYS_T::cmdPrint("-c_tauc:", c_tauc);
   SYS_T::cmdPrint("-c_ct:", c_ct);
   SYS_T::cmdPrint("-inflow_file:", inflow_file);
+  SYS_T::cmdPrint("-freestream_speed:", freestream_speed);
+  SYS_T::cmdPrint("-freestream_thd_time:", freestream_thd_time);
+  SYS_T::cmdPrint("-angular_velo:", angular_velo);
+  SYS_T::cmdPrint("-angular_thd_time:", angular_thd_time);
   SYS_T::cmdPrint("-lpn_file:", lpn_file);
   SYS_T::cmdPrint("-part_file:", part_file);
   SYS_T::cmdPrint("-nl_rtol:", nl_rtol);
@@ -185,6 +275,10 @@ int main(int argc, char *argv[])
     cmdh5w->write_intScalar("sol_record_freq", sol_record_freq);
     cmdh5w->write_string("lpn_file", lpn_file);
     cmdh5w->write_string("inflow_file", inflow_file);
+    cmdh5w->write_doubleScalar("freestream_speed", freestream_speed);
+    cmdh5w->write_doubleScalar("freestream_thd_time", freestream_thd_time);
+    cmdh5w->write_doubleScalar("angular_velo", angular_velo);
+    cmdh5w->write_doubleScalar("angular_thd_time", angular_thd_time);
   }
 
   MPI_Barrier(PETSC_COMM_WORLD);
@@ -204,6 +298,9 @@ int main(int argc, char *argv[])
 
   // Local sub-domain's inflow bc
   auto locinfnbc = SYS_T::make_unique<ALocal_InflowBC>(part_file, rank);
+
+  // Local sub-domain's rotating wall bc
+  auto locrotbc = SYS_T::make_unique<ALocal_RotatedBC>(part_file, rank);
 
   // Local sub-domain's elemental bc
   std::unique_ptr<ALocal_EBC> locebc = SYS_T::make_unique<ALocal_EBC_outflow>(part_file, rank);
@@ -272,13 +369,26 @@ int main(int argc, char *argv[])
 
   // ===== Initial condition =====
   std::unique_ptr<PDNSolution> base = SYS_T::make_unique<PDNSolution_NS>( 
-      pNode.get(), fNode.get(), locinfnbc.get(), 1 );
+      pNode.get(), fNode.get(), locinfnbc.get(), 3, freestream_speed );
 
   std::unique_ptr<PDNSolution> sol = nullptr;
   std::unique_ptr<PDNSolution> dot_sol = nullptr;
   NS_INIT::initialize_solution_state(pNode.get(), is_restart, 
       restart_index, restart_time, restart_step, restart_name, 
       sol, dot_sol, initial_index, initial_time, initial_step);
+
+  if( !is_restart )
+  {
+    sol->Copy( *base );
+    sol->ScaleValue( 0.0 );
+
+    apply_uniform_inflow_bc( locinfnbc.get(),
+        cosine_ramp_value(freestream_speed, freestream_thd_time, initial_time),
+        sol.get() );
+    apply_rotating_wall_bc( locrotbc.get(),
+        cosine_ramp_value(angular_velo, angular_thd_time, initial_time),
+        sol.get() );
+  }
 
   // ===== Global assembly =====
   SYS_T::commPrint("===> Initializing Mat K and Vec G ... \n");
@@ -309,8 +419,9 @@ int main(int argc, char *argv[])
   // ===== Nonlinear solver context =====
   auto nsolver = SYS_T::make_unique<PNonlinear_NS_Solver>(
       std::move(lsolver), std::move(pmat), std::move(tm_galpha), 
-      std::move(inflow_rate), std::move(base), nl_rtol, nl_atol, 
-      nl_dtol, nl_maxits, nl_refreq, nl_threshold );
+      std::move(inflow_rate), std::move(base), freestream_speed, freestream_thd_time,
+      nl_rtol, nl_atol, nl_dtol, nl_maxits, nl_refreq, angular_velo,
+      angular_thd_time, nl_threshold );
 
   nsolver->print_info();
 
@@ -327,6 +438,17 @@ int main(int argc, char *argv[])
 
   MPI_Barrier(PETSC_COMM_WORLD);
 
+  if( !is_restart )
+  {
+    dot_sol->ScaleValue( 0.0 );
+    apply_uniform_inflow_bc( locinfnbc.get(),
+        cosine_ramp_rate(freestream_speed, freestream_thd_time, initial_time),
+        dot_sol.get() );
+    apply_rotating_wall_bc( locrotbc.get(),
+        cosine_ramp_rate(angular_velo, angular_thd_time, initial_time),
+        dot_sol.get() );
+  }
+
   // ===== Outlet data recording files =====
   tsolver->record_outlet_data(sol.get(), dot_sol.get(), timeinfo.get(), gbc.get(),
       gloAssem.get(), true, is_restart);
@@ -338,12 +460,12 @@ int main(int argc, char *argv[])
   // ===== FEM analysis =====
   SYS_T::commPrint("===> Start Finite Element Analysis:\n");
   tsolver->TM_NS_GenAlpha(is_restart, std::move(dot_sol), std::move(sol), 
-      std::move(timeinfo), locinfnbc.get(), gbc.get(), gloAssem.get() );
+      std::move(timeinfo), locinfnbc.get(), locrotbc.get(), gbc.get(), gloAssem.get() );
 
   // ===== Print complete solver info =====
   tsolver -> print_lsolver_info();
 
-  tsolver.reset(); locinfnbc.reset(); gbc.reset(); gloAssem.reset();
+  tsolver.reset(); locrotbc.reset(); locinfnbc.reset(); gbc.reset(); gloAssem.reset();
 
   PetscFinalize();
   return EXIT_SUCCESS;

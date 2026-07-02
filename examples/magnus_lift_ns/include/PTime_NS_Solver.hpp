@@ -62,6 +62,7 @@ class PTime_NS_Solver
         std::unique_ptr<PDNSolution> init_sol,
         std::unique_ptr<PDNTimeStep> time_info,
         const ALocal_InflowBC * const &infnbc_part,
+        const ALocal_RotatedBC * const &rotbc_part,
         IGenBC * const &gbc, 
         IPGAssem * const &gassem_ptr ) const;
 

@@ -20,7 +20,8 @@ class PDNSolution_NS : public PDNSolution
     PDNSolution_NS( const APart_Node * const &pNode,
         const FEANode * const &fNode_ptr,
         const ALocal_InflowBC * const &infbc,
-        const int &type, bool isprint = true );
+        const int &type, const double &uniform_speed = 0.0,
+        bool isprint = true );
 
     PDNSolution_NS( const APart_Node * const &pNode, 
         const int &type, bool isprint = true );
@@ -42,6 +43,11 @@ class PDNSolution_NS : public PDNSolution
     //         with the unit flow rate.
     void Init_pipe_parabolic( const APart_Node * const &pNode_ptr,
         const FEANode * const &fNode_ptr, bool isprint );
+
+    // case 3: generate a uniform inflow velocity on all inlet nodes.
+    void Init_uniform_inflow( const APart_Node * const &pNode_ptr,
+        const ALocal_InflowBC * const &infbc,
+        const double &uniform_speed, bool isprint );
 };
 
 #endif

@@ -14,6 +14,7 @@
 #include "PLinear_Solver_PETSc.hpp"
 #include "Matrix_PETSc.hpp"
 #include "PDNSolution_NS.hpp"
+#include "ALocal_RotatedBC.hpp"
 
 class PNonlinear_NS_Solver
 {
@@ -24,9 +25,13 @@ class PNonlinear_NS_Solver
         std::unique_ptr<TimeMethod_GenAlpha> in_tmga,
         std::unique_ptr<IFlowRate> in_flrate,
         std::unique_ptr<PDNSolution> in_sol_base,
+        const double &input_freestream_speed,
+        const double &input_freestream_thd_time,
         const double &input_nrtol, const double &input_natol, 
         const double &input_ndtol, const int &input_max_iteration, 
         const int &input_renew_freq, 
+        const double &input_angular_velo,
+        const double &input_angular_thd_time,
         const int &input_renew_threshold = 4 );
 
     ~PNonlinear_NS_Solver() = default;
@@ -53,11 +58,13 @@ class PNonlinear_NS_Solver
         PDNSolution * const &dot_sol,
         PDNSolution * const &sol,
         const ALocal_InflowBC * const &infnbc_part,
+        const ALocal_RotatedBC * const &rotbc_part,
         const IGenBC * const &gbc,
         IPGAssem * const &gassem_ptr ) const;
 
   private:
-    const double nr_tol, na_tol, nd_tol;
+    const double freestream_speed, nr_tol, na_tol, nd_tol;
+    const double freestream_thd_time, angular_velo, angular_thd_time;
     const int nmaxits, nrenew_freq, nrenew_threshold;
 
     const std::unique_ptr<PLinear_Solver_PETSc> lsolver;
@@ -78,6 +85,34 @@ class PNonlinear_NS_Solver
       SYS_T::commPrint("  === NR ite: %d, r_error: %e, a_error: %e \n",
           count, rel_err, abs_err);
     }
+
+    void update_rotating_wall_value(
+        const double &stime,
+        const ALocal_RotatedBC * const &rotbc,
+        PDNSolution * const &sol ) const;
+
+    void update_rotating_wall_dot_value(
+        const double &stime,
+        const ALocal_RotatedBC * const &rotbc,
+        PDNSolution * const &dot_sol ) const;
+
+    void update_uniform_inflow_value(
+        const double &stime,
+        const ALocal_InflowBC * const &infbc,
+        PDNSolution * const &sol ) const;
+
+    void update_uniform_inflow_dot_value(
+        const double &stime,
+        const ALocal_InflowBC * const &infbc,
+        PDNSolution * const &dot_sol ) const;
+
+    double get_ramped_freestream_speed( const double &stime ) const;
+
+    double get_ramped_freestream_accel( const double &stime ) const;
+
+    double get_ramped_angular_velocity( const double &stime ) const;
+
+    double get_ramped_angular_accel( const double &stime ) const;
 
 };
 

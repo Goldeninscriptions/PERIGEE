@@ -4,7 +4,7 @@ PDNSolution_NS::PDNSolution_NS(
     const APart_Node * const &pNode,
     const FEANode * const &fNode_ptr,
     const ALocal_InflowBC * const &infbc,
-    const int &type, bool isprint ) 
+    const int &type, const double &uniform_speed, bool isprint ) 
 : PDNSolution( pNode )
 {
   if( pNode->get_dof() != 4 ) SYS_T::print_fatal("Error: PDNSolution_NS : the APart_Node gives wrong dof number. \n");
@@ -19,6 +19,9 @@ PDNSolution_NS::PDNSolution_NS(
       break;
     case 2:
       Init_pipe_parabolic( pNode, fNode_ptr, isprint );
+      break;
+    case 3:
+      Init_uniform_inflow( pNode, infbc, uniform_speed, isprint );
       break;
     default:
       SYS_T::print_fatal("Error: PDNSolution_NS: No such type of initional condition.\n");
@@ -201,6 +204,56 @@ void PDNSolution_NS::Init_pipe_parabolic(
     SYS_T::commPrint("                       flow rate 100.0 .\n");
     SYS_T::commPrint("                       direction [%e %e %e].\n", out_nx, out_ny, out_nz);
   }
+}
+
+void PDNSolution_NS::Init_uniform_inflow(
+    const APart_Node * const &pNode_ptr,
+    const ALocal_InflowBC * const &infbc,
+    const double &uniform_speed,
+    bool isprint )
+{
+  double value[4] = {0.0, 0.0, 0.0, 0.0};
+
+  for(int ii=0; ii<nlocalnode; ++ii)
+  {
+    const int pos = pNode_ptr->get_node_loc(ii) * 4;
+    const int location[4] = { pos, pos + 1, pos + 2, pos + 3 };
+    VecSetValues(solution, 4, location, value, INSERT_VALUES);
+  }
+
+  const int num_nbc = infbc->get_num_nbc();
+
+  for(int nbc_id=0; nbc_id<num_nbc; ++nbc_id)
+  {
+    const Vector_3 outvec = infbc->get_outvec(nbc_id);
+
+    if( infbc->get_Num_LD(nbc_id) > 0 )
+    {
+      value[1] = -uniform_speed * outvec.x();
+      value[2] = -uniform_speed * outvec.y();
+      value[3] = -uniform_speed * outvec.z();
+
+      for(int ii=0; ii<nlocalnode; ++ii)
+      {
+        if( infbc->is_inLDN(nbc_id, pNode_ptr->get_node_loc(ii)) )
+        {
+          const int pos = pNode_ptr->get_node_loc(ii) * 4;
+          const int location[4] = { pos, pos + 1, pos + 2, pos + 3 };
+          VecSetValues(solution, 4, location, value, INSERT_VALUES);
+        }
+      }
+    }
+
+    if(isprint)
+    {
+      SYS_T::commPrint("===> Initial solution: uniform inflow on nbc_id = %d \n", nbc_id);
+      SYS_T::commPrint("                       speed magnitude = %e \n", uniform_speed);
+      SYS_T::commPrint("                       direction [%e %e %e].\n",
+          -outvec.x(), -outvec.y(), -outvec.z());
+    }
+  }
+
+  Assembly_GhostUpdate();
 }
 
 // EOF

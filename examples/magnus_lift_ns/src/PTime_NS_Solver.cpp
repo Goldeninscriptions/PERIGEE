@@ -42,6 +42,7 @@ void PTime_NS_Solver::TM_NS_GenAlpha(
     std::unique_ptr<PDNSolution> init_sol,
     std::unique_ptr<PDNTimeStep> time_info,
     const ALocal_InflowBC * const &infnbc_part,
+    const ALocal_RotatedBC * const &rotbc_part,
     IGenBC * const &gbc,
     IPGAssem * const &gassem_ptr ) const
 {
@@ -87,6 +88,7 @@ void PTime_NS_Solver::TM_NS_GenAlpha(
     nl_counter = nsolver->GenAlpha_Solve_NS( renew_flag,
         time_info->get_time(), time_info->get_step(), pre_dot_sol.get(),
         pre_sol.get(), cur_dot_sol.get(), cur_sol.get(), infnbc_part,
+        rotbc_part,
         gbc, gassem_ptr );
 
     // Update the time step information
