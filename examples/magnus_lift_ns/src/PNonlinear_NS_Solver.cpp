@@ -6,8 +6,6 @@ PNonlinear_NS_Solver::PNonlinear_NS_Solver(
     std::unique_ptr<PLinear_Solver_PETSc> in_lsolver,
     std::unique_ptr<Matrix_PETSc> in_bc_mat,
     std::unique_ptr<TimeMethod_GenAlpha> in_tmga,
-    std::unique_ptr<IFlowRate> in_flrate,
-    std::unique_ptr<PDNSolution> in_sol_base,
     const double &input_freestream_speed,
     const double &input_freestream_thd_time,
     const double &input_nrtol, const double &input_natol,
@@ -24,9 +22,7 @@ PNonlinear_NS_Solver::PNonlinear_NS_Solver(
   nrenew_threshold(input_renew_threshold),
   lsolver(std::move(in_lsolver)),
   bc_mat(std::move(in_bc_mat)),
-  tmga(std::move(in_tmga)),
-  flrate(std::move(in_flrate)),
-  sol_base(std::move(in_sol_base))
+  tmga(std::move(in_tmga))
 {
 #ifdef PETSC_USE_LOG
   PetscClassIdRegister("mat_vec_assembly", &classid_assembly);

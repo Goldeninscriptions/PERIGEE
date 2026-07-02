@@ -11,7 +11,6 @@
 #include "HDF5_Writer.hpp"
 #include "ANL_Tools.hpp"
 #include "ALocal_RotatedBC.hpp"
-#include "FlowRateFactory.hpp"
 #include "GenBCFactory.hpp"
 #include "InitHelpers.hpp"
 #include "PLocAssem_VMS_NS_GenAlpha_WeakBC.hpp"
@@ -113,8 +112,6 @@ int main(int argc, char *argv[])
   double c_tauc = 1.0; // scaling factor for tau_c, take 0.0, 0.125, or 1.0
   double c_ct = 4.0;   // C_T parameter for defining tau_M
 
-  // inflow file
-  std::string inflow_file("inflow_fourier_series.txt");
   double freestream_speed = 0.0;
   double freestream_thd_time = 0.0;
 
@@ -193,7 +190,6 @@ int main(int argc, char *argv[])
   SYS_T::GetOptionReal("-fl_mu", fluid_mu);
   SYS_T::GetOptionReal("-c_tauc", c_tauc);
   SYS_T::GetOptionReal("-c_ct", c_ct);
-  SYS_T::GetOptionString("-inflow_file", inflow_file);
   SYS_T::GetOptionReal("-freestream_speed", freestream_speed);
   SYS_T::GetOptionReal("-freestream_thd_time", freestream_thd_time);
   SYS_T::GetOptionReal("-angular_velo", angular_velo);
@@ -234,7 +230,6 @@ int main(int argc, char *argv[])
   SYS_T::cmdPrint("-fl_mu:", fluid_mu);
   SYS_T::cmdPrint("-c_tauc:", c_tauc);
   SYS_T::cmdPrint("-c_ct:", c_ct);
-  SYS_T::cmdPrint("-inflow_file:", inflow_file);
   SYS_T::cmdPrint("-freestream_speed:", freestream_speed);
   SYS_T::cmdPrint("-freestream_thd_time:", freestream_thd_time);
   SYS_T::cmdPrint("-angular_velo:", angular_velo);
@@ -274,7 +269,6 @@ int main(int argc, char *argv[])
     cmdh5w->write_doubleScalar("init_step", initial_step);
     cmdh5w->write_intScalar("sol_record_freq", sol_record_freq);
     cmdh5w->write_string("lpn_file", lpn_file);
-    cmdh5w->write_string("inflow_file", inflow_file);
     cmdh5w->write_doubleScalar("freestream_speed", freestream_speed);
     cmdh5w->write_doubleScalar("freestream_thd_time", freestream_thd_time);
     cmdh5w->write_doubleScalar("angular_velo", angular_velo);
@@ -319,13 +313,6 @@ int main(int argc, char *argv[])
 
   SYS_T::commPrint("===> %d processor(s) are assigned for FEM analysis. \n", size);
 
-  // ===== Inflow flow rate =====
-  SYS_T::commPrint("===> Setup inflow flow rate. \n");
-
-  auto inflow_rate = FlowRateFactory::createFlowRate(inflow_file);
-
-  inflow_rate->print_info();
-
   // ===== LPN models =====
   auto gbc = GenBCFactory::createGenBC(lpn_file, initial_time, initial_step, 
       initial_index, 1000);
@@ -368,6 +355,8 @@ int main(int argc, char *argv[])
   else SYS_T::print_fatal("Error: Unknown wall model type.\n");
 
   // ===== Initial condition =====
+  SYS_T::commPrint("===> Setup uniform far-field inflow and rotating wall boundary data. \n");
+
   std::unique_ptr<PDNSolution> base = SYS_T::make_unique<PDNSolution_NS>( 
       pNode.get(), fNode.get(), locinfnbc.get(), 3, freestream_speed );
 
@@ -418,8 +407,8 @@ int main(int argc, char *argv[])
 
   // ===== Nonlinear solver context =====
   auto nsolver = SYS_T::make_unique<PNonlinear_NS_Solver>(
-      std::move(lsolver), std::move(pmat), std::move(tm_galpha), 
-      std::move(inflow_rate), std::move(base), freestream_speed, freestream_thd_time,
+      std::move(lsolver), std::move(pmat), std::move(tm_galpha),
+      freestream_speed, freestream_thd_time,
       nl_rtol, nl_atol, nl_dtol, nl_maxits, nl_refreq, angular_velo,
       angular_thd_time, nl_threshold );
 

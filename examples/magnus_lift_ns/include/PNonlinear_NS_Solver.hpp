@@ -8,7 +8,6 @@
 // Author: Ju Liu
 // Date: Feb 11 2020
 // ==================================================================
-#include "IFlowRate.hpp"
 #include "TimeMethod_GenAlpha.hpp"
 #include "IPGAssem.hpp"
 #include "PLinear_Solver_PETSc.hpp"
@@ -23,8 +22,6 @@ class PNonlinear_NS_Solver
         std::unique_ptr<PLinear_Solver_PETSc> in_lsolver,
         std::unique_ptr<Matrix_PETSc> in_bc_mat,
         std::unique_ptr<TimeMethod_GenAlpha> in_tmga,
-        std::unique_ptr<IFlowRate> in_flrate,
-        std::unique_ptr<PDNSolution> in_sol_base,
         const double &input_freestream_speed,
         const double &input_freestream_thd_time,
         const double &input_nrtol, const double &input_natol, 
@@ -70,8 +67,6 @@ class PNonlinear_NS_Solver
     const std::unique_ptr<PLinear_Solver_PETSc> lsolver;
     const std::unique_ptr<Matrix_PETSc> bc_mat;
     const std::unique_ptr<TimeMethod_GenAlpha> tmga;
-    const std::unique_ptr<IFlowRate> flrate;
-    const std::unique_ptr<PDNSolution> sol_base;
 
 #ifdef PETSC_USE_LOG
     PetscLogEvent mat_assem_0_event, mat_assem_1_event;
