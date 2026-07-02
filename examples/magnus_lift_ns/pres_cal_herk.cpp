@@ -9,6 +9,7 @@
 // ==================================================================
 
 #include "HDF5_Writer.hpp"
+#include "ALocal_FarFieldInflowBC.hpp"
 #include "ANL_Tools.hpp"
 #include "FlowRateFactory.hpp"
 #include "PGAssem_Block_NS_FEM_HERK.hpp"
@@ -160,7 +161,7 @@ int main(int argc, char *argv[])
   auto locnbc = SYS_T::make_unique<ALocal_NBC>(part_file, rank);
 
   // Local sub-domain's inflow bc
-  auto locinfnbc = SYS_T::make_unique<ALocal_InflowBC>(part_file, rank);
+  auto locinfnbc = SYS_T::make_unique<ALocal_FarFieldInflowBC>(part_file, rank);
 
   // Local sub-domain's elemental bc
   auto locebc = SYS_T::make_unique<ALocal_EBC>(part_file, rank);

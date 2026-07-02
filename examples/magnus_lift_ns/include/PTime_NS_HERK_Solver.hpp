@@ -15,7 +15,7 @@
 #include "Matrix_PETSc.hpp"
 #include "PDNTimeStep.hpp"
 #include "PDNSolution_NS.hpp"
-#include "ALocal_InflowBC.hpp"
+#include "ALocal_FarFieldInflowBC.hpp"
 
 class PTime_NS_HERK_Solver
 {
@@ -27,7 +27,7 @@ class PTime_NS_HERK_Solver
         std::unique_ptr<ITimeMethod_RungeKutta> in_tmRK,
         std::unique_ptr<IFlowRate> in_flrate,
         std::unique_ptr<PDNSolution> in_sol_base,
-        std::unique_ptr<ALocal_InflowBC> in_infnbc,
+        std::unique_ptr<ALocal_FarFieldInflowBC> in_infnbc,
         const std::string &input_name, const int &in_nlocalnode, 
         const int &input_record_freq, const double &input_final_time );
 
@@ -64,7 +64,7 @@ class PTime_NS_HERK_Solver
     const std::unique_ptr<ITimeMethod_RungeKutta> tmRK;
     const std::unique_ptr<IFlowRate> flrate;
     const std::unique_ptr<PDNSolution> sol_base;
-    const std::unique_ptr<const ALocal_InflowBC> infnbc;
+    const std::unique_ptr<const ALocal_FarFieldInflowBC> infnbc;
 
 #ifdef PETSC_USE_LOG
     PetscLogEvent K_solve, update_dotstep;
