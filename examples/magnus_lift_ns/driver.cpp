@@ -10,6 +10,7 @@
 // ==================================================================
 #include "HDF5_Writer.hpp"
 #include "ANL_Tools.hpp"
+#include "ALocal_FarFieldInflowBC.hpp"
 #include "ALocal_RotatedBC.hpp"
 #include "GenBCFactory.hpp"
 #include "InitHelpers.hpp"
@@ -38,7 +39,7 @@ namespace
   }
 
   void apply_uniform_inflow_bc(
-      const ALocal_InflowBC * const infbc,
+      const ALocal_FarFieldInflowBC * const infbc,
       const double freestream_magnitude,
       PDNSolution * const sol )
   {
@@ -291,7 +292,7 @@ int main(int argc, char *argv[])
   auto locnbc = SYS_T::make_unique<ALocal_NBC>(part_file, rank);
 
   // Local sub-domain's inflow bc
-  auto locinfnbc = SYS_T::make_unique<ALocal_InflowBC>(part_file, rank);
+  auto locinfnbc = SYS_T::make_unique<ALocal_FarFieldInflowBC>(part_file, rank);
 
   // Local sub-domain's rotating wall bc
   auto locrotbc = SYS_T::make_unique<ALocal_RotatedBC>(part_file, rank);
@@ -381,7 +382,7 @@ int main(int argc, char *argv[])
 
   // ===== Global assembly =====
   SYS_T::commPrint("===> Initializing Mat K and Vec G ... \n");
-  std::unique_ptr<IPGAssem> gloAssem = SYS_T::make_unique<PGAssem_NS_FEM>( 
+  std::unique_ptr<PGAssem_NS_FEM> gloAssem = SYS_T::make_unique<PGAssem_NS_FEM>( 
       gbc.get(), std::move(locIEN), std::move(locElem), std::move(fNode), 
       std::move(pNode), std::move(locnbc), std::move(locebc), 
       std::move(locwbc), std::move(locAssem_ptr), nz_estimate );

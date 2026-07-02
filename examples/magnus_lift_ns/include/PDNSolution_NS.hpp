@@ -12,14 +12,14 @@
 // ==================================================================
 #include "PDNSolution.hpp"
 #include "FEANode.hpp"
-#include "ALocal_InflowBC.hpp"
+#include "ALocal_FarFieldInflowBC.hpp"
 
 class PDNSolution_NS : public PDNSolution
 {
   public:
     PDNSolution_NS( const APart_Node * const &pNode,
         const FEANode * const &fNode_ptr,
-        const ALocal_InflowBC * const &infbc,
+        const ALocal_FarFieldInflowBC * const &infbc,
         const int &type, const double &uniform_speed = 0.0,
         bool isprint = true );
 
@@ -36,7 +36,7 @@ class PDNSolution_NS : public PDNSolution
     //         with the unit flow rate.
     void Init_flow_parabolic( const APart_Node * const &pNode_ptr,
         const FEANode * const &fNode_ptr,
-        const ALocal_InflowBC * const &infbc,
+        const ALocal_FarFieldInflowBC * const &infbc,
         bool isprint );
 
     // case 2: generate flow parabolic for an arbitrary inlet face
@@ -46,7 +46,7 @@ class PDNSolution_NS : public PDNSolution
 
     // case 3: generate a uniform inflow velocity on all inlet nodes.
     void Init_uniform_inflow( const APart_Node * const &pNode_ptr,
-        const ALocal_InflowBC * const &infbc,
+        const ALocal_FarFieldInflowBC * const &infbc,
         const double &uniform_speed, bool isprint );
 };
 

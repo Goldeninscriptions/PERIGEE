@@ -1,0 +1,224 @@
+#include "ALocal_FarFieldInflowBC.hpp"
+#include "HDF5_Reader.hpp"
+#include "Math_Tools.hpp"
+
+ALocal_FarFieldInflowBC::ALocal_FarFieldInflowBC(
+    const std::string &fileBaseName, int cpu_rank )
+{
+  const std::string fName = SYS_T::gen_partfile_name( fileBaseName, cpu_rank );
+
+  auto h5r = SYS_T::make_unique<HDF5_Reader>(fName);
+
+  const std::string gname("/inflow");
+
+  num_nbc = h5r->read_intScalar( gname.c_str(), "num_nbc" );
+
+  Num_LD.resize(num_nbc);
+  LDN.resize(num_nbc);
+  outnormal.resize(num_nbc);
+  act_area.resize(num_nbc);
+  ful_area.resize(num_nbc);
+  num_out_bc_pts.resize(num_nbc);
+  outline_pts.resize(num_nbc);
+  centroid.resize(num_nbc);
+  num_local_node.resize(num_nbc);
+  num_local_cell.resize(num_nbc);
+  cell_nLocBas.resize(num_nbc);
+  local_pt_xyz.resize(num_nbc);
+  local_cell_ien.resize(num_nbc);
+  local_node_pos.resize(num_nbc);
+
+  for(int nbc_id=0; nbc_id<num_nbc; ++nbc_id)
+  {
+    const std::string sub_gname = gname + "/nbcid_" + std::to_string(nbc_id);
+
+    Num_LD[nbc_id] = h5r->read_intScalar( sub_gname.c_str(), "Num_LD" );
+
+    act_area[nbc_id]       = h5r->read_doubleScalar( sub_gname.c_str(), "Inflow_active_area" );
+    ful_area[nbc_id]       = h5r->read_doubleScalar( sub_gname.c_str(), "Inflow_full_area" );
+    num_out_bc_pts[nbc_id] = h5r->read_intScalar( sub_gname.c_str(), "num_out_bc_pts" );
+    centroid[nbc_id]       = Vector_3( h5r->read_Vector_3( sub_gname.c_str(), "centroid" ) );
+    outnormal[nbc_id]      = Vector_3( h5r->read_Vector_3( sub_gname.c_str(), "Outward_normal_vector" ) );
+    cell_nLocBas[nbc_id]   = h5r->read_intScalar( sub_gname.c_str(), "cell_nLocBas" );
+    num_local_cell[nbc_id] = h5r->read_intScalar( sub_gname.c_str(), "num_local_cell" );
+    num_local_node[nbc_id] = h5r->read_intScalar( sub_gname.c_str(), "num_local_node" );
+
+    if( Num_LD[nbc_id] > 0 )
+    {
+      LDN[nbc_id] = h5r->read_intVector( sub_gname.c_str(), "LDN" );
+
+      const std::string outline_name = sub_gname + "/outline_pts";
+      if( num_out_bc_pts[nbc_id] > 0 && h5r->check_data(outline_name.c_str()) )
+        outline_pts[nbc_id] = h5r->read_doubleVector( sub_gname.c_str(), "outline_pts" );
+      else
+        outline_pts[nbc_id].clear();
+    }
+    else
+    {
+      LDN[nbc_id].clear();
+      outline_pts[nbc_id].clear();
+    }
+
+    SYS_T::print_fatal_if( Num_LD[nbc_id] != static_cast<int>(LDN[nbc_id].size()),
+        "Error: ALocal_FarFieldInflowBC LDN vector size does not match with Num_LD.\n" );
+
+    if(num_local_cell[nbc_id] > 0)
+    {
+      const auto temp_xyz = h5r->read_doubleVector( sub_gname.c_str(), "local_pt_xyz" );
+
+      ASSERT( VEC_T::get_size(temp_xyz) == num_local_node[nbc_id] * 3,
+          "Error: ALocal_FarFieldInflowBC local_pt_xyz format is wrong.\n" );
+
+      local_pt_xyz[nbc_id] = std::vector<Vector_3>( num_local_node[nbc_id], Vector_3{0, 0, 0} );
+
+      for(int ii=0; ii<num_local_node[nbc_id]; ++ii)
+        local_pt_xyz[nbc_id][ii] = Vector_3{
+            temp_xyz[3 * ii], temp_xyz[3 * ii + 1], temp_xyz[3 * ii + 2] };
+
+      local_cell_ien[nbc_id] = h5r->read_intVector( sub_gname.c_str(), "local_cell_ien" );
+      local_node_pos[nbc_id] = h5r->read_intVector( sub_gname.c_str(), "local_node_pos" );
+    }
+    else
+    {
+      local_pt_xyz[nbc_id].clear();
+      local_cell_ien[nbc_id].clear();
+      local_node_pos[nbc_id].clear();
+    }
+  }
+}
+
+ALocal_FarFieldInflowBC::ALocal_FarFieldInflowBC( const HDF5_Reader * const &h5r )
+{
+  const std::string gname("/inflow");
+
+  num_nbc = h5r->read_intScalar( gname.c_str(), "num_nbc" );
+
+  Num_LD.resize(num_nbc);
+  LDN.resize(num_nbc);
+  outnormal.resize(num_nbc);
+  act_area.resize(num_nbc);
+  ful_area.resize(num_nbc);
+  num_out_bc_pts.resize(num_nbc);
+  outline_pts.resize(num_nbc);
+  centroid.resize(num_nbc);
+  num_local_node.resize(num_nbc);
+  num_local_cell.resize(num_nbc);
+  cell_nLocBas.resize(num_nbc);
+  local_pt_xyz.resize(num_nbc);
+  local_cell_ien.resize(num_nbc);
+  local_node_pos.resize(num_nbc);
+
+  for(int nbc_id=0; nbc_id<num_nbc; ++nbc_id)
+  {
+    const std::string sub_gname = gname + "/nbcid_" + std::to_string(nbc_id);
+
+    Num_LD[nbc_id] = h5r->read_intScalar( sub_gname.c_str(), "Num_LD" );
+
+    act_area[nbc_id]       = h5r->read_doubleScalar( sub_gname.c_str(), "Inflow_active_area" );
+    ful_area[nbc_id]       = h5r->read_doubleScalar( sub_gname.c_str(), "Inflow_full_area" );
+    num_out_bc_pts[nbc_id] = h5r->read_intScalar( sub_gname.c_str(), "num_out_bc_pts" );
+    centroid[nbc_id]       = Vector_3( h5r->read_Vector_3( sub_gname.c_str(), "centroid" ) );
+    outnormal[nbc_id]      = Vector_3( h5r->read_Vector_3( sub_gname.c_str(), "Outward_normal_vector" ) );
+    cell_nLocBas[nbc_id]   = h5r->read_intScalar( sub_gname.c_str(), "cell_nLocBas" );
+    num_local_cell[nbc_id] = h5r->read_intScalar( sub_gname.c_str(), "num_local_cell" );
+    num_local_node[nbc_id] = h5r->read_intScalar( sub_gname.c_str(), "num_local_node" );
+
+    if( Num_LD[nbc_id] > 0 )
+    {
+      LDN[nbc_id] = h5r->read_intVector( sub_gname.c_str(), "LDN" );
+
+      const std::string outline_name = sub_gname + "/outline_pts";
+      if( num_out_bc_pts[nbc_id] > 0 && h5r->check_data(outline_name.c_str()) )
+        outline_pts[nbc_id] = h5r->read_doubleVector( sub_gname.c_str(), "outline_pts" );
+      else
+        outline_pts[nbc_id].clear();
+    }
+    else
+    {
+      LDN[nbc_id].clear();
+      outline_pts[nbc_id].clear();
+    }
+
+    SYS_T::print_fatal_if( Num_LD[nbc_id] != static_cast<int>(LDN[nbc_id].size()),
+        "Error: ALocal_FarFieldInflowBC LDN vector size does not match with Num_LD.\n" );
+
+    if(num_local_cell[nbc_id] > 0)
+    {
+      const auto temp_xyz = h5r->read_doubleVector( sub_gname.c_str(), "local_pt_xyz" );
+
+      ASSERT( VEC_T::get_size(temp_xyz) == num_local_node[nbc_id] * 3,
+          "Error: ALocal_FarFieldInflowBC local_pt_xyz format is wrong.\n" );
+
+      local_pt_xyz[nbc_id] = std::vector<Vector_3>( num_local_node[nbc_id], Vector_3{0, 0, 0} );
+
+      for(int ii=0; ii<num_local_node[nbc_id]; ++ii)
+        local_pt_xyz[nbc_id][ii] = Vector_3{
+            temp_xyz[3 * ii], temp_xyz[3 * ii + 1], temp_xyz[3 * ii + 2] };
+
+      local_cell_ien[nbc_id] = h5r->read_intVector( sub_gname.c_str(), "local_cell_ien" );
+      local_node_pos[nbc_id] = h5r->read_intVector( sub_gname.c_str(), "local_node_pos" );
+    }
+    else
+    {
+      local_pt_xyz[nbc_id].clear();
+      local_cell_ien[nbc_id].clear();
+      local_node_pos[nbc_id].clear();
+    }
+  }
+}
+
+double ALocal_FarFieldInflowBC::get_radius( int nbc_id, const Vector_3 &pt ) const
+{
+  SYS_T::print_fatal_if( num_out_bc_pts[nbc_id] == 0,
+      "Error: ALocal_FarFieldInflowBC::get_radius requires inlet outline points.\n" );
+
+  const double rc = Vec3::dist( pt, centroid[nbc_id] );
+
+  double rb = Vec3::dist( pt, Vector_3( outline_pts[nbc_id][0],
+      outline_pts[nbc_id][1], outline_pts[nbc_id][2] ) );
+
+  for(int ii=1; ii<num_out_bc_pts[nbc_id]; ++ii)
+  {
+    const double newdist = Vec3::dist( pt, Vector_3( outline_pts[nbc_id][3 * ii],
+        outline_pts[nbc_id][3 * ii + 1], outline_pts[nbc_id][3 * ii + 2] ) );
+
+    if(newdist < rb) rb = newdist;
+  }
+
+  return rc / (rb + rc);
+}
+
+void ALocal_FarFieldInflowBC::get_ctrlPts_xyz( int nbc_id, int eindex,
+    double * const &ctrl_x, double * const &ctrl_y, double * const &ctrl_z ) const
+{
+  for(int jj=0; jj<cell_nLocBas[nbc_id]; ++jj)
+  {
+    const int pos = local_cell_ien[nbc_id][cell_nLocBas[nbc_id] * eindex + jj];
+    ctrl_x[jj] = local_pt_xyz[nbc_id][pos].x();
+    ctrl_y[jj] = local_pt_xyz[nbc_id][pos].y();
+    ctrl_z[jj] = local_pt_xyz[nbc_id][pos].z();
+  }
+}
+
+void ALocal_FarFieldInflowBC::get_SIEN( int nbc_id, int eindex,
+    int * const &sien ) const
+{
+  for(int jj=0; jj<cell_nLocBas[nbc_id]; ++jj)
+  {
+    const int pos = local_cell_ien[nbc_id][cell_nLocBas[nbc_id] * eindex + jj];
+    sien[jj] = local_node_pos[nbc_id][pos];
+  }
+}
+
+std::vector<int> ALocal_FarFieldInflowBC::get_SIEN( int nbc_id, int eindex ) const
+{
+  std::vector<int> out( cell_nLocBas[nbc_id], 0 );
+
+  for(int jj=0; jj<cell_nLocBas[nbc_id]; ++jj)
+  {
+    const int pos = local_cell_ien[nbc_id][cell_nLocBas[nbc_id] * eindex + jj];
+    out[jj] = local_node_pos[nbc_id][pos];
+  }
+
+  return out;
+}

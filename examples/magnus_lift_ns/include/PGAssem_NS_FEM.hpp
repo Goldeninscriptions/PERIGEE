@@ -21,6 +21,7 @@
 #include "ALocal_NBC.hpp"
 #include "ALocal_EBC.hpp"
 #include "ALocal_EBC_outflow.hpp"
+#include "ALocal_FarFieldInflowBC.hpp"
 #include "ALocal_WeakBC.hpp"
 #include "PETSc_Tools.hpp"
 #include "PDNSolution_NS.hpp"
@@ -79,18 +80,18 @@ class PGAssem_NS_FEM : public IPGAssem
         const PDNSolution * const &sol,
         const int &ebc_id ) const;
 
-    virtual double Assem_surface_flowrate(
+    double Assem_surface_flowrate(
         const PDNSolution * const &sol,
-        const ALocal_InflowBC * const &infbc_part,
+        const ALocal_FarFieldInflowBC * const &infbc_part,
         const int &infnbc_id ) const;
 
     virtual double Assem_surface_ave_pressure(
         const PDNSolution * const &sol,
         const int &ebc_id ) const;
 
-    virtual double Assem_surface_ave_pressure(
+    double Assem_surface_ave_pressure(
         const PDNSolution * const &sol,
-        const ALocal_InflowBC * const &infbc_part,
+        const ALocal_FarFieldInflowBC * const &infbc_part,
         const int &infnbc_id ) const;
 
   private:

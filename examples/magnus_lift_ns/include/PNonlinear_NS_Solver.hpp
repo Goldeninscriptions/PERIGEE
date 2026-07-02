@@ -13,6 +13,7 @@
 #include "PLinear_Solver_PETSc.hpp"
 #include "Matrix_PETSc.hpp"
 #include "PDNSolution_NS.hpp"
+#include "ALocal_FarFieldInflowBC.hpp"
 #include "ALocal_RotatedBC.hpp"
 
 class PNonlinear_NS_Solver
@@ -54,7 +55,7 @@ class PNonlinear_NS_Solver
         const PDNSolution * const &pre_sol,
         PDNSolution * const &dot_sol,
         PDNSolution * const &sol,
-        const ALocal_InflowBC * const &infnbc_part,
+        const ALocal_FarFieldInflowBC * const &infnbc_part,
         const ALocal_RotatedBC * const &rotbc_part,
         const IGenBC * const &gbc,
         IPGAssem * const &gassem_ptr ) const;
@@ -93,12 +94,12 @@ class PNonlinear_NS_Solver
 
     void update_uniform_inflow_value(
         const double &stime,
-        const ALocal_InflowBC * const &infbc,
+        const ALocal_FarFieldInflowBC * const &infbc,
         PDNSolution * const &sol ) const;
 
     void update_uniform_inflow_dot_value(
         const double &stime,
-        const ALocal_InflowBC * const &infbc,
+        const ALocal_FarFieldInflowBC * const &infbc,
         PDNSolution * const &dot_sol ) const;
 
     double get_ramped_freestream_speed( const double &stime ) const;

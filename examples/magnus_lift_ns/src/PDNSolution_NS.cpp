@@ -3,7 +3,7 @@
 PDNSolution_NS::PDNSolution_NS( 
     const APart_Node * const &pNode,
     const FEANode * const &fNode_ptr,
-    const ALocal_InflowBC * const &infbc,
+    const ALocal_FarFieldInflowBC * const &infbc,
     const int &type, const double &uniform_speed, bool isprint ) 
 : PDNSolution( pNode )
 {
@@ -74,7 +74,7 @@ void PDNSolution_NS::Init_zero(
 void PDNSolution_NS::Init_flow_parabolic(
     const APart_Node * const &pNode_ptr,
     const FEANode * const &fNode_ptr,
-    const ALocal_InflowBC * const &infbc,
+    const ALocal_FarFieldInflowBC * const &infbc,
     bool isprint )
 {
   double value[4] = {0.0, 0.0, 0.0, 0.0};
@@ -208,7 +208,7 @@ void PDNSolution_NS::Init_pipe_parabolic(
 
 void PDNSolution_NS::Init_uniform_inflow(
     const APart_Node * const &pNode_ptr,
-    const ALocal_InflowBC * const &infbc,
+    const ALocal_FarFieldInflowBC * const &infbc,
     const double &uniform_speed,
     bool isprint )
 {
