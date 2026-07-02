@@ -54,7 +54,7 @@ int PNonlinear_NS_Solver::GenAlpha_Solve_NS(
     const PDNSolution * const &pre_sol,
     PDNSolution * const &dot_sol,
     PDNSolution * const &sol,
-    const ALocal_FarFieldInflowBC * const &infnbc_part,
+    const ALocal_InflowBC * const &infnbc_part,
     const ALocal_RotatedBC * const &rotbc_part,
     const IGenBC * const &gbc,
     IPGAssem * const &gassem_ptr ) const
@@ -315,7 +315,7 @@ void PNonlinear_NS_Solver::update_rotating_wall_dot_value(
 
 void PNonlinear_NS_Solver::update_uniform_inflow_value(
     const double &stime,
-    const ALocal_FarFieldInflowBC * const &infbc,
+    const ALocal_InflowBC * const &infbc,
     PDNSolution * const &sol ) const
 {
   const double ramped_freestream_speed = get_ramped_freestream_speed(stime);
@@ -344,7 +344,7 @@ void PNonlinear_NS_Solver::update_uniform_inflow_value(
 
 void PNonlinear_NS_Solver::update_uniform_inflow_dot_value(
     const double &stime,
-    const ALocal_FarFieldInflowBC * const &infbc,
+    const ALocal_InflowBC * const &infbc,
     PDNSolution * const &dot_sol ) const
 {
   const double ramped_freestream_accel = get_ramped_freestream_accel(stime);

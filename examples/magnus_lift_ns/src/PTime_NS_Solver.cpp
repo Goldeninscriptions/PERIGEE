@@ -41,7 +41,7 @@ void PTime_NS_Solver::TM_NS_GenAlpha(
     std::unique_ptr<PDNSolution> init_dot_sol,
     std::unique_ptr<PDNSolution> init_sol,
     std::unique_ptr<PDNTimeStep> time_info,
-    const ALocal_FarFieldInflowBC * const &infnbc_part,
+    const ALocal_InflowBC * const &infnbc_part,
     const ALocal_RotatedBC * const &rotbc_part,
     IGenBC * const &gbc,
     PGAssem_NS_FEM * const &gassem_ptr ) const
@@ -123,7 +123,7 @@ void PTime_NS_Solver::TM_NS_GenAlpha(
 void PTime_NS_Solver::record_inlet_data(
     const PDNSolution * const &sol,
     const PDNTimeStep * const &time_info,
-    const ALocal_FarFieldInflowBC * const &infnbc_part,
+    const ALocal_InflowBC * const &infnbc_part,
     const PGAssem_NS_FEM * const &gassem_ptr,
     bool is_driver,
     bool is_restart ) const

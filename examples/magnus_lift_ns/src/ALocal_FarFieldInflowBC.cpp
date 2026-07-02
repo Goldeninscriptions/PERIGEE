@@ -187,38 +187,3 @@ double ALocal_FarFieldInflowBC::get_radius( int nbc_id, const Vector_3 &pt ) con
 
   return rc / (rb + rc);
 }
-
-void ALocal_FarFieldInflowBC::get_ctrlPts_xyz( int nbc_id, int eindex,
-    double * const &ctrl_x, double * const &ctrl_y, double * const &ctrl_z ) const
-{
-  for(int jj=0; jj<cell_nLocBas[nbc_id]; ++jj)
-  {
-    const int pos = local_cell_ien[nbc_id][cell_nLocBas[nbc_id] * eindex + jj];
-    ctrl_x[jj] = local_pt_xyz[nbc_id][pos].x();
-    ctrl_y[jj] = local_pt_xyz[nbc_id][pos].y();
-    ctrl_z[jj] = local_pt_xyz[nbc_id][pos].z();
-  }
-}
-
-void ALocal_FarFieldInflowBC::get_SIEN( int nbc_id, int eindex,
-    int * const &sien ) const
-{
-  for(int jj=0; jj<cell_nLocBas[nbc_id]; ++jj)
-  {
-    const int pos = local_cell_ien[nbc_id][cell_nLocBas[nbc_id] * eindex + jj];
-    sien[jj] = local_node_pos[nbc_id][pos];
-  }
-}
-
-std::vector<int> ALocal_FarFieldInflowBC::get_SIEN( int nbc_id, int eindex ) const
-{
-  std::vector<int> out( cell_nLocBas[nbc_id], 0 );
-
-  for(int jj=0; jj<cell_nLocBas[nbc_id]; ++jj)
-  {
-    const int pos = local_cell_ien[nbc_id][cell_nLocBas[nbc_id] * eindex + jj];
-    out[jj] = local_node_pos[nbc_id][pos];
-  }
-
-  return out;
-}

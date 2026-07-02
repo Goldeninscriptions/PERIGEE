@@ -82,7 +82,7 @@ class PGAssem_NS_FEM : public IPGAssem
 
     double Assem_surface_flowrate(
         const PDNSolution * const &sol,
-        const ALocal_FarFieldInflowBC * const &infbc_part,
+        const ALocal_InflowBC * const &infbc_part,
         const int &infnbc_id ) const;
 
     virtual double Assem_surface_ave_pressure(
@@ -91,7 +91,7 @@ class PGAssem_NS_FEM : public IPGAssem
 
     double Assem_surface_ave_pressure(
         const PDNSolution * const &sol,
-        const ALocal_FarFieldInflowBC * const &infbc_part,
+        const ALocal_InflowBC * const &infbc_part,
         const int &infnbc_id ) const;
 
   private:

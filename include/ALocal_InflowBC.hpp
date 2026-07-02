@@ -148,7 +148,7 @@ class ALocal_InflowBC
 
     virtual std::vector<int> get_SIEN( int nbc_id, int eindex ) const;
 
-  private:
+  protected:
     int num_nbc;
 
     // Number of local Dirichlet nodes. Length num_nbc
@@ -193,9 +193,7 @@ class ALocal_InflowBC
     // num_nbc x num_local_node[ii]
     std::vector< std::vector<int> > local_node_pos;
   
-    // ------------------------------------------------------------------------ 
-    // Disallow default constructor 
-    ALocal_InflowBC() = delete; 
+    ALocal_InflowBC() = default;
 };
 
 #endif
